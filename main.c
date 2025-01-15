@@ -1,18 +1,3 @@
-/*******************************************************************************************
-*
-*   raylib [core] example - 2D Camera platformer
-*
-*   Example originally created with raylib 2.5, last time updated with raylib 3.0
-*
-*   Example contributed by arvyy (@arvyy) and reviewed by Ramon Santamaria (@raysan5)
-*
-*   Example licensed under an unmodified zlib/libpng license, which is an OSI-certified,
-*   BSD-like license that allows static linking with closed source software
-*
-*   Copyright (c) 2019-2024 arvyy (@arvyy)
-*
-********************************************************************************************/
-
 #include "raylib.h"
 #include "raymath.h"
 
@@ -52,7 +37,7 @@ int main(void)
     const int screenWidth = 800;
     const int screenHeight = 450;
 
-    InitWindow(screenWidth, screenHeight, "raylib [core] example - 2d camera");
+    InitWindow(screenWidth, screenHeight, "CyberDash - 0.0.1");
 
     Player player = { 0 };
     player.position = (Vector2){ 400, 280 };
@@ -162,9 +147,9 @@ int main(void)
 
 void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float delta)
 {
-    if (IsKeyDown(KEY_LEFT)) player->position.x -= PLAYER_HOR_SPD*delta;
-    if (IsKeyDown(KEY_RIGHT)) player->position.x += PLAYER_HOR_SPD*delta;
-    if (IsKeyDown(KEY_SPACE) && player->canJump)
+    if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A)) player->position.x -= PLAYER_HOR_SPD*delta;
+    if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) player->position.x += PLAYER_HOR_SPD*delta;
+    if ((IsKeyDown(KEY_SPACE) && player->canJump) || (IsKeyDown(KEY_UP) && player->canJump) || (IsKeyDown(KEY_W) && player->canJump))
     {
         player->speed = -PLAYER_JUMP_SPD;
         player->canJump = false;
