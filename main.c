@@ -22,7 +22,7 @@ typedef struct EnvItem {
 //----------------------------------------------------------------------------------
 // Module functions declaration
 //----------------------------------------------------------------------------------
-void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float delta);
+void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float delta, Sound jumpSound);
 void UpdateCameraCenter(Camera2D *camera, Player *player, EnvItem *envItems, int envItemsLength, float delta, int width, int height);
 void UpdateCameraCenterInsideMap(Camera2D *camera, Player *player, EnvItem *envItems, int envItemsLength, float delta, int width, int height);
 void UpdateCameraCenterSmoothFollow(Camera2D *camera, Player *player, EnvItem *envItems, int envItemsLength, float delta, int width, int height);
@@ -85,8 +85,14 @@ int main(void)
 
     unsigned int framesCounter = 0;
 
+    InitAudioDevice();              // Initialize audio device
+
+    Music Intro = LoadMusicStream("Sound/Intro.mp3");
+    Sound jumpSound = LoadSound("Sound/Jump.mp3");
+
+    PlayMusicStream(Intro);
+
     SetTargetFPS(60);
-    InitAudioDevice();
     //--------------------------------------------------------------------------------------
 
     // Main game loop
@@ -98,9 +104,12 @@ int main(void)
         // Frames Counter
         framesCounter++;
 
+        // Background Music
+        UpdateMusicStream(Intro);
+
         float deltaTime = GetFrameTime();
 
-        UpdatePlayer(&player, envItems, envItemsLength, deltaTime);
+        UpdatePlayer(&player, envItems, envItemsLength, deltaTime, jumpSound);
 
         camera.zoom += ((float)GetMouseWheelMove()*0.05f);
 
@@ -161,6 +170,8 @@ int main(void)
         //----------------------------------------------------------------------------------
     }
 
+    UnloadSound(jumpSound);
+
     // De-Initialization
     //--------------------------------------------------------------------------------------
     CloseWindow();        // Close window and OpenGL context
@@ -169,12 +180,13 @@ int main(void)
     return 0;
 }
 
-void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float delta)
+void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float delta, Sound jumpSound)
 {
     if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A)) player->position.x -= PLAYER_HOR_SPD*delta;
     if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) player->position.x += PLAYER_HOR_SPD*delta;
     if ((IsKeyDown(KEY_SPACE) && player->canJump) || (IsKeyDown(KEY_UP) && player->canJump) || (IsKeyDown(KEY_W) && player->canJump))
     {
+        PlaySound(jumpSound);
         player->speed = -PLAYER_JUMP_SPD;
         player->canJump = false;
     }
