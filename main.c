@@ -37,7 +37,7 @@ int main(void)
     // Initialization
     //--------------------------------------------------------------------------------------
     const int screenWidth = 800;
-    const int screenHeight = 450;
+    const int screenHeight = 600;
 
     InitWindow(screenWidth, screenHeight, "CyberDash - 0.0.2");
 
@@ -48,10 +48,10 @@ int main(void)
     player.died = false;
     EnvItem envItems[] = {
         {{ 0, 0, 1000, 400 }, 0, LIGHTGRAY, false }, // Skybox
-        {{ 0, 0, 600, 200 }, 1, GRAY, false }, //Plateforme de départ
-        {{ 550, 0, 100, 10 }, 1, GRAY, false },
-        {{ 800, 20, 100, 10 }, 1, RED, true },
-        {{ 1000, 0, 100, 10 }, 1, GRAY, false }
+        {{ 0, 0, 600, 200 }, 1, GRAY, false }, // Plateforme de départ
+        {{ 550, 0, 100, 10 }, 1, RED, true },
+        {{ 800, 20, 100, 10 }, 1, GRAY, false },
+        {{ 1000, 0, 100, 10 }, 1, RED, true }
     };
 
     int envItemsLength = sizeof(envItems)/sizeof(envItems[0]);
@@ -82,7 +82,10 @@ int main(void)
         "Player push camera on getting too close to screen edge"
     };
 
+    unsigned int framesCounter = 0;
+
     SetTargetFPS(60);
+    InitAudioDevice();
     //--------------------------------------------------------------------------------------
 
     // Main game loop
@@ -91,6 +94,9 @@ int main(void)
         // Update
         //----------------------------------------------------------------------------------
         
+        // Frames Counter
+        framesCounter++;
+
         float deltaTime = GetFrameTime();
 
         UpdatePlayer(&player, envItems, envItemsLength, deltaTime);
@@ -99,7 +105,6 @@ int main(void)
 
         if (camera.zoom > 3.0f) camera.zoom = 3.0f;
         else if (camera.zoom < 0.25f) camera.zoom = 0.25f;
-
 
         if (IsKeyPressed(KEY_R))
         {
@@ -113,6 +118,12 @@ int main(void)
             player.speed = 0;
             player.canJump = false;
             player.died = false;
+        }
+
+        // Every 2s (120 frames)
+        if (((framesCounter/120)%2) == 1)
+        {
+
         }
 
 
@@ -131,7 +142,7 @@ int main(void)
                 for (int i = 0; i < envItemsLength; i++) DrawRectangleRec(envItems[i].rect, envItems[i].color);
 
                 Rectangle playerRect = { player.position.x - 20, player.position.y - 40, 40.0f, 40.0f };
-                DrawRectangleRec(playerRect, RED);
+                DrawRectangleRec(playerRect, GREEN);
                 
                 DrawCircleV(player.position, 5.0f, GOLD);
 
@@ -139,9 +150,9 @@ int main(void)
             EndMode2D();
 
             DrawText("Controls:", 20, 20, 10, BLACK);
-            DrawText("- Right/Left to move", 40, 40, 10, DARKGRAY);
+            DrawText("- AWD/Left/Right/UP to move", 40, 40, 10, DARKGRAY);
             DrawText("- Space to jump", 40, 60, 10, DARKGRAY);
-            DrawText("- Mouse Wheel to Zoom in-out, R to reset zoom", 40, 80, 10, DARKGRAY);
+            DrawText("- Mouse Wheel to Zoom in-out, R to reset", 40, 80, 10, DARKGRAY);
             DrawText("- C to change camera mode", 40, 100, 10, DARKGRAY);
             DrawText("Current camera mode:", 20, 120, 10, BLACK);
             DrawText(cameraDescriptions[cameraOption], 40, 140, 10, DARKGRAY);
@@ -173,6 +184,19 @@ void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float d
     {
         EnvItem *ei = envItems + i;
         Vector2 *p = &(player->position);
+
+        // Tue le joueur si canKill == true 
+        if (ei->canKill &&
+            ei->rect.x <= p->x &&
+            ei->rect.x + ei->rect.width >= p->x &&
+            ei->rect.y <= p->y &&
+            ei->rect.y + ei->rect.height >= p->y)
+        {
+            player->died = true;
+            return; 
+        }
+
+        // Collision
         if (ei->blocking &&
             ei->rect.x <= p->x &&
             ei->rect.x + ei->rect.width >= p->x &&
@@ -183,7 +207,7 @@ void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float d
             player->speed = 0.0f;
             p->y = ei->rect.y;
             break;
-        }
+        } 
     }
 
     if (!hitObstacle)
