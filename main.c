@@ -49,7 +49,8 @@ int main(void)
     EnvItem envItems[] = {
         {{ 0, 0, 1000, 400 }, 0, LIGHTGRAY, false }, // Skybox
         {{ 0, 0, 600, 200 }, 1, GRAY, false }, // Plateforme de départ
-        {{ 550, 0, 100, 10 }, 1, RED, true },
+        {{ 0, 220, 10000, 20 }, 1, LIGHTGRAY, true }, // Killbox when falling
+        {{ 600, 0, 50, 200 }, 1, RED, true }, //  First Killer Part
         {{ 800, 20, 100, 10 }, 1, GRAY, false },
         {{ 1000, 0, 100, 10 }, 1, RED, true }
     };
@@ -125,7 +126,6 @@ int main(void)
         {
 
         }
-
 
         // Call update camera function by its pointer
         cameraUpdaters[cameraOption](&camera, &player, envItems, envItemsLength, deltaTime, screenWidth, screenHeight);
