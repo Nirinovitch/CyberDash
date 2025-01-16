@@ -1,20 +1,22 @@
 #include "raylib.h"
 #include "raymath.h"
 
-#define G 400
+#define G 600
 #define PLAYER_JUMP_SPD 350.0f
-#define PLAYER_HOR_SPD 200.0f
+#define PLAYER_HOR_SPD 300.0f
 
 typedef struct Player {
     Vector2 position;
     float speed;
     bool canJump;
+    bool died;
 } Player;
 
 typedef struct EnvItem {
     Rectangle rect;
     int blocking;
     Color color;
+    bool canKill;
 } EnvItem;
 
 //----------------------------------------------------------------------------------
@@ -37,18 +39,19 @@ int main(void)
     const int screenWidth = 800;
     const int screenHeight = 450;
 
-    InitWindow(screenWidth, screenHeight, "CyberDash - 0.0.1");
+    InitWindow(screenWidth, screenHeight, "CyberDash - 0.0.2");
 
     Player player = { 0 };
-    player.position = (Vector2){ 400, 280 };
+    player.position = (Vector2){ 300, 0 };
     player.speed = 0;
     player.canJump = false;
+    player.died = false;
     EnvItem envItems[] = {
-        {{ 0, 0, 1000, 400 }, 0, LIGHTGRAY },
-        {{ 0, 400, 1000, 200 }, 1, GRAY },
-        {{ 300, 200, 400, 10 }, 1, GRAY },
-        {{ 250, 300, 100, 10 }, 1, GRAY },
-        {{ 650, 300, 100, 10 }, 1, GRAY }
+        {{ 0, 0, 1000, 400 }, 0, LIGHTGRAY, false }, // Skybox
+        {{ 0, 0, 600, 200 }, 1, GRAY, false }, //Plateforme de départ
+        {{ 550, 0, 100, 10 }, 1, GRAY, false },
+        {{ 800, 20, 100, 10 }, 1, RED, true },
+        {{ 1000, 0, 100, 10 }, 1, GRAY, false }
     };
 
     int envItemsLength = sizeof(envItems)/sizeof(envItems[0]);
@@ -87,6 +90,7 @@ int main(void)
     {
         // Update
         //----------------------------------------------------------------------------------
+        
         float deltaTime = GetFrameTime();
 
         UpdatePlayer(&player, envItems, envItemsLength, deltaTime);
@@ -96,13 +100,21 @@ int main(void)
         if (camera.zoom > 3.0f) camera.zoom = 3.0f;
         else if (camera.zoom < 0.25f) camera.zoom = 0.25f;
 
+
         if (IsKeyPressed(KEY_R))
         {
-            camera.zoom = 1.0f;
-            player.position = (Vector2){ 400, 280 };
+            player.died = true;
         }
 
         if (IsKeyPressed(KEY_C)) cameraOption = (cameraOption + 1)%cameraUpdatersLength;
+
+        if (player.died == true) {
+            player.position = (Vector2){ 300, 0 };
+            player.speed = 0;
+            player.canJump = false;
+            player.died = false;
+        }
+
 
         // Call update camera function by its pointer
         cameraUpdaters[cameraOption](&camera, &player, envItems, envItemsLength, deltaTime, screenWidth, screenHeight);
@@ -122,6 +134,7 @@ int main(void)
                 DrawRectangleRec(playerRect, RED);
                 
                 DrawCircleV(player.position, 5.0f, GOLD);
+
 
             EndMode2D();
 
