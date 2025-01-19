@@ -10,6 +10,7 @@ typedef struct Player {
     float speed;
     bool canJump;
     bool died;
+    float deadTime;
 } Player;
 
 typedef struct EnvItem {
@@ -39,21 +40,67 @@ int main(void)
     const int screenWidth = 800;
     const int screenHeight = 600;
 
-    InitWindow(screenWidth, screenHeight, "CyberDash - 0.0.2");
+    InitWindow(screenWidth, screenHeight, "CyberDash - 0.1");
 
     Player player = { 0 };
     player.position = (Vector2){ 300, 0 };
     player.speed = 0;
     player.canJump = false;
     player.died = false;
+
     EnvItem envItems[] = {
-        {{ 0, 0, 1000, 400 }, 0, LIGHTGRAY, false }, // Skybox
-        {{ 0, 0, 600, 200 }, 1, GRAY, false }, // Plateforme de départ
-        {{ 0, 220, 10000, 20 }, 1, LIGHTGRAY, true }, // Killbox when falling
-        {{ 600, 0, 50, 200 }, 1, RED, true }, //  First Killer Part
-        {{ 800, 20, 100, 10 }, 1, GRAY, false },
-        {{ 1000, 0, 100, 10 }, 1, RED, true }
-    };
+    {{ 0, 0, 1000, 400 }, 0, LIGHTGRAY, false }, // Skybox
+    {{ 0, 0, 600, 200 }, 1, GRAY, false }, // Spawn
+    {{ 600, 0, 50, 200 }, 1, RED, true }, // Platforme Tueur 
+
+    {{ 700, 0, 100, 10 }, 1, GRAY, false },  
+    {{ 850, -30, 100, 10 }, 1, GRAY, false }, 
+    {{ 1000, 0, 100, 10 }, 1, RED, true },    
+    {{ 1150, -30, 100, 10 }, 1, GRAY, false },
+
+    {{ 1300, 100, 100, 10 }, 1, GRAY, false },  
+    {{ 1400, 150, 100, 10 }, 1, GRAY, false },  
+    
+    {{ 1600, 50, 50, 200 }, 1, RED, true },    
+
+    {{ 1700, 100, 100, 10 }, 1, GRAY, false }, 
+    {{ 1800, 200, 100, 10 }, 1, GRAY, false },  
+
+    {{ 1900, 100, 100, 10 }, 1, RED, true },    
+    {{ 2000, 100, 100, 10 }, 1, RED, true },    
+
+    {{ 2100, 200, 100, 10 }, 1, GRAY, false },   
+    {{ 2200, 100, 100, 10 }, 1, GRAY, false },  
+
+    {{ 2300, 0, 100, 10 }, 1, GRAY, false },  
+    {{ 2400, -100, 100, 10 }, 1, GRAY, false },  
+
+    {{ 2600, 0, 50, 200 }, 1, RED, true },   
+
+    {{ 2900, 0, 100, 10 }, 1, GRAY, false },  
+
+    // Dernier niveau
+    {{ 3000, 0, 20, 10 }, 1, GRAY, false },  
+
+    {{ 3100, 0, 20, 10 }, 1, GRAY, false },  
+
+    {{ 3200, 0, 20, 10 }, 1, GRAY, false }, 
+
+    {{ 3300, 0, 20, 10 }, 1, RED, true },
+
+    {{ 3400, 0, 20, 10 }, 1, GRAY, false },
+
+    {{ 3500, 0, 20, 10 }, 1, RED, true },
+
+    // Win
+    {{ 3600, 0, 10, 10 }, 1, GREEN, false },
+
+    // Limite 
+    {{ -500, 250, 10000, 20 }, 1, LIGHTGRAY, true }
+};
+
+
+
 
     int envItemsLength = sizeof(envItems)/sizeof(envItems[0]);
 
@@ -89,6 +136,9 @@ int main(void)
 
     Music Intro = LoadMusicStream("Sound/Intro.mp3");
     Sound jumpSound = LoadSound("Sound/Jump.mp3");
+    Sound Death = LoadSound("Sound/Death.mp3");
+
+    SetMusicVolume(Intro, 0.5);
 
     PlayMusicStream(Intro);
 
@@ -118,17 +168,12 @@ int main(void)
 
         if (IsKeyPressed(KEY_R))
         {
-            player.died = true;
+             player.position = (Vector2){ 300, 0 };
         }
 
         if (IsKeyPressed(KEY_C)) cameraOption = (cameraOption + 1)%cameraUpdatersLength;
 
-        if (player.died == true) {
-            player.position = (Vector2){ 300, 0 };
-            player.speed = 0;
-            player.canJump = false;
-            player.died = false;
-        }
+
 
         // Every 2s (120 frames)
         if (((framesCounter/120)%2) == 1)
@@ -151,9 +196,15 @@ int main(void)
                 for (int i = 0; i < envItemsLength; i++) DrawRectangleRec(envItems[i].rect, envItems[i].color);
 
                 Rectangle playerRect = { player.position.x - 20, player.position.y - 40, 40.0f, 40.0f };
-                DrawRectangleRec(playerRect, GREEN);
+
+                if (player.died) {
+                    DrawRectangleRec(playerRect, RED);
+                } else {
+                    DrawRectangleRec(playerRect, GREEN);
+                }
                 
-                DrawCircleV(player.position, 5.0f, GOLD);
+                             
+                DrawCircleV(player.position, 5.0f, RED);
 
 
             EndMode2D();
@@ -167,6 +218,15 @@ int main(void)
             DrawText(cameraDescriptions[cameraOption], 40, 140, 10, DARKGRAY);
 
         EndDrawing();
+
+        if (player.died == true) {
+            PlaySound(Death);
+            player.speed = 0;
+            player.canJump = false;
+            player.died = false;
+            player.position = (Vector2){ 300, 0 };
+        }
+
         //----------------------------------------------------------------------------------
     }
 
@@ -182,53 +242,51 @@ int main(void)
 
 void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float delta, Sound jumpSound)
 {
-    if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A)) player->position.x -= PLAYER_HOR_SPD*delta;
-    if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) player->position.x += PLAYER_HOR_SPD*delta;
-    if ((IsKeyDown(KEY_SPACE) && player->canJump) || (IsKeyDown(KEY_UP) && player->canJump) || (IsKeyDown(KEY_W) && player->canJump))
-    {
+
+
+    if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A)) player->position.x -= PLAYER_HOR_SPD * delta;
+    if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) player->position.x += PLAYER_HOR_SPD * delta;
+    if ((IsKeyDown(KEY_SPACE) && player->canJump) || (IsKeyDown(KEY_UP) && player->canJump) || (IsKeyDown(KEY_W) && player->canJump)) {
         PlaySound(jumpSound);
         player->speed = -PLAYER_JUMP_SPD;
         player->canJump = false;
     }
 
     bool hitObstacle = false;
-    for (int i = 0; i < envItemsLength; i++)
-    {
+
+    for (int i = 0; i < envItemsLength; i++) {
         EnvItem *ei = envItems + i;
         Vector2 *p = &(player->position);
 
-        // Tue le joueur si canKill == true 
+        // Si (canKill == true)
         if (ei->canKill &&
             ei->rect.x <= p->x &&
             ei->rect.x + ei->rect.width >= p->x &&
             ei->rect.y <= p->y &&
-            ei->rect.y + ei->rect.height >= p->y)
-        {
-            player->died = true;
-            return; 
+            ei->rect.y + ei->rect.height >= p->y) {
+            player->died = true;  
+            return;
         }
 
-        // Collision
         if (ei->blocking &&
             ei->rect.x <= p->x &&
             ei->rect.x + ei->rect.width >= p->x &&
             ei->rect.y >= p->y &&
-            ei->rect.y <= p->y + player->speed*delta)
-        {
+            ei->rect.y <= p->y + player->speed * delta) {
             hitObstacle = true;
             player->speed = 0.0f;
             p->y = ei->rect.y;
             break;
-        } 
+        }
     }
 
-    if (!hitObstacle)
-    {
-        player->position.y += player->speed*delta;
-        player->speed += G*delta;
+    if (!hitObstacle) {
+        player->position.y += player->speed * delta;
+        player->speed += G * delta;
         player->canJump = false;
+    } else {
+        player->canJump = true;
     }
-    else player->canJump = true;
 }
 
 void UpdateCameraCenter(Camera2D *camera, Player *player, EnvItem *envItems, int envItemsLength, float delta, int width, int height)
@@ -332,4 +390,4 @@ void UpdateCameraPlayerBoundsPush(Camera2D *camera, Player *player, EnvItem *env
     if (player->position.y < bboxWorldMin.y) camera->target.y = player->position.y;
     if (player->position.x > bboxWorldMax.x) camera->target.x = bboxWorldMin.x + (player->position.x - bboxWorldMax.x);
     if (player->position.y > bboxWorldMax.y) camera->target.y = bboxWorldMin.y + (player->position.y - bboxWorldMax.y);
-}
+} 
